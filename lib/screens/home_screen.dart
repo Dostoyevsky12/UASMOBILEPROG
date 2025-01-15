@@ -1,9 +1,11 @@
-import 'package:flutter/cupertino.dart';
+// lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:uasjirrr/model/notes_model.dart';
 import 'package:uasjirrr/screens/add_edit_screen.dart';
+import 'package:uasjirrr/screens/login_screen.dart';
 import 'package:uasjirrr/screens/view_note_screen.dart';
 import 'package:uasjirrr/services/database_helper.dart';
+import 'package:uasjirrr/services/shared_preferences_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,7 +28,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _loadNotes();
   }
@@ -43,9 +44,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final now = DateTime.now();
 
     if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
-      return 'Today, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(0, '0')}';
+      return 'Today, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     }
-    return '${dt.day}/${dt.month}/${dt.year}, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(0, '0')}';
+    return '${dt.day}/${dt.month}/${dt.year}, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -55,76 +56,98 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
-        title: Text("My Notes"),
-      ),
-      body: GridView.builder(
-        padding: EdgeInsets.all(16),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
+        title: Text(
+          "My Notes",
+          style: TextStyle(color: Colors.black),
         ),
-        itemCount: _notes.length,
-        itemBuilder: (context, index) {
-          final note = _notes[index];
-          final color = Color(int.parse(note.color));
-
-          return GestureDetector(
-            onTap: () async {
-              await Navigator.push(context, MaterialPageRoute(builder: (context) => ViewNoteScreen(note: note),));
-              _loadNotes();
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout, color: Colors.black),
+            onPressed: () async {
+              await SharedPreferencesHelper.logout();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+                (route) => false,
+              );
             },
-            child: Container(
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    note.title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    note.content,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white70,
-                    ),
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Spacer(),
-                  Text(
-                    _formatDateTime(note.dateTime),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+          ),
+        ],
       ),
+      body: _notes.isEmpty
+          ? Center(child: Text('No notes available.'))
+          : GridView.builder(
+              padding: EdgeInsets.all(16),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: _notes.length,
+              itemBuilder: (context, index) {
+                final note = _notes[index];
+                final color = Color(int.parse(note.color));
+
+                return GestureDetector(
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ViewNoteScreen(note: note)),
+                    );
+                    _loadNotes();
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          note.title,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          note.content,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white70,
+                          ),
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Spacer(),
+                        Text(
+                          _formatDateTime(note.dateTime),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.push(
